@@ -10,16 +10,6 @@ import SnapKit
 
 class ViewController: UIViewController {
 
-    var isBlack: Bool = false {
-        didSet {
-            if isBlack {
-                self.view.backgroundColor = .black
-            } else {
-                self.view.backgroundColor = .white
-            }
-        }
-    }
-
 //    MARK: - UI
 
     private lazy var label: UILabel = {
@@ -51,9 +41,9 @@ class ViewController: UIViewController {
 
     private lazy var button: UIButton = {
         let button = UIButton()
-        button.setTitle("Button", for: .normal)
+        button.setTitle("Начать подбор пароля", for: .normal)
         button.setTitleColor(.green, for: .normal)
-        button.addTarget(self, action: #selector(onBut), for: .touchUpInside)
+        button.addTarget(self, action: #selector(onButt), for: .touchUpInside)
         return button
     }()
 
@@ -64,24 +54,31 @@ class ViewController: UIViewController {
         return stack
     }()
 
+    private lazy var spinner: UIActivityIndicatorView = {
+        let spinner = UIActivityIndicatorView(style: .large)
+        spinner.color = .red
+        return spinner
+    }()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupHierarchy()
-        setupLayout()
+        setupView()
     }
 
     private func setupHierarchy() {
         view.addSubview(label)
         view.addSubview(stack)
+        view.addSubview(spinner)
         stack.addArrangedSubview(passwordTextField)
         stack.addArrangedSubview(buttonGeneretedPassword)
         stack.addArrangedSubview(button)
     }
 
-    private func setupLayout() {
+    private func setupView() {
         stack.snp.makeConstraints {
             $0.top.equalTo(view.snp.centerY)
-            $0.trailing.leading.equalTo(view).inset(50)
+            $0.trailing.leading.equalTo(view).inset(70)
         }
         label.snp.makeConstraints {
             $0.top.equalTo(view.snp.top).inset(view.frame.size.height * 0.3)
@@ -90,28 +87,49 @@ class ViewController: UIViewController {
         passwordTextField.snp.makeConstraints {
             $0.height.equalTo(40)
         }
+        spinner.snp.makeConstraints {
+            $0.leading.equalTo(passwordTextField.snp.trailing).offset(20)
+            $0.centerY.equalTo(passwordTextField)
+        }
     }
 
-    func bruteForce(passwordToUnlock: String) {
-        let ALLOWED_CHARACTERS:   [String] = String().printable.map { String($0) }
+    func bruteForce(passwordToUnlock: String) -> String {
+        let ALLOWED_CHARACTERS: [String] = String().printable.map { String($0) }
 
         var password: String = ""
 
-        // Will strangely ends at 0000 instead of ~~~
-        while password != passwordToUnlock { // Increase MAXIMUM_PASSWORD_SIZE value for more
-            password = generateBruteForce(password, fromArray: ALLOWED_CHARACTERS)
-            //             Your stuff here
-//            print(password)
-            // Your stuff here
+            while password != passwordToUnlock {
+                password = generateBruteForce(password, fromArray: ALLOWED_CHARACTERS)
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    label.text = password
+            }
         }
-//        print(password)
+        return password
     }
 
 //    MARK: - Action
 
     @objc
-    private func onBut() {
-        isBlack.toggle()
+    private func onButt() {
+        let text = passwordTextField.text
+        var labelText = ""
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    spinner.startAnimating()
+                }
+                labelText = bruteForce(passwordToUnlock: text ?? "")
+            }
+
+        workItem.notify(queue: .main) { [weak self] in
+            guard let self = self else { return }
+            label.text = labelText
+            passwordTextField.isSecureTextEntry = false
+            spinner.stopAnimating()
+        }
+        DispatchQueue.global().async(execute: workItem)
     }
 
     @objc
