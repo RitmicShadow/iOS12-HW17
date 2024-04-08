@@ -8,7 +8,17 @@
 import UIKit
 import SnapKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, GeneratedPassword {
+
+    var isBlack: Bool = true {
+        didSet {
+            if isBlack {
+                self.view.backgroundColor = .black
+            } else {
+                self.view.backgroundColor = .white
+            }
+        }
+    }
 
 //    MARK: - UI
 
@@ -32,7 +42,7 @@ class ViewController: UIViewController {
     }()
 
     private lazy var buttonGeneretedPassword: UIButton = {
-        let button = UIButton()
+        let button = UIButton(type: .system)
         button.setTitle("Сгенерировать пароль", for: .normal)
         button.setTitleColor(.green, for: .normal)
         button.addTarget(self, action: #selector(generatedPassword), for: .touchUpInside)
@@ -40,10 +50,17 @@ class ViewController: UIViewController {
     }()
 
     private lazy var button: UIButton = {
-        let button = UIButton()
+        let button = UIButton(type: .system)
         button.setTitle("Начать подбор пароля", for: .normal)
         button.setTitleColor(.green, for: .normal)
         button.addTarget(self, action: #selector(onButt), for: .touchUpInside)
+        return button
+    }()
+    private lazy var colorChange: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Сменить цвет фона", for: .normal)
+        button.setTitleColor(.green, for: .normal)
+        button.addTarget(self, action: #selector(changeColor), for: .touchUpInside)
         return button
     }()
 
@@ -62,17 +79,23 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .black
         setupHierarchy()
         setupView()
+        addTapGestureToHideKeyboard()
     }
+
+//    MARK: - Setups
 
     private func setupHierarchy() {
         view.addSubview(label)
         view.addSubview(stack)
         view.addSubview(spinner)
+        view.addSubview(colorChange)
         stack.addArrangedSubview(passwordTextField)
         stack.addArrangedSubview(buttonGeneretedPassword)
         stack.addArrangedSubview(button)
+        stack.addArrangedSubview(colorChange)
     }
 
     private func setupView() {
@@ -100,7 +123,7 @@ class ViewController: UIViewController {
 
             while password != passwordToUnlock {
                 password = generateBruteForce(password, fromArray: ALLOWED_CHARACTERS)
-                DispatchQueue.main.async { [weak self] in
+                DispatchQueue.main.sync { [weak self] in
                     guard let self = self else { return }
                     label.text = password
             }
@@ -129,6 +152,7 @@ class ViewController: UIViewController {
             passwordTextField.isSecureTextEntry = false
             spinner.stopAnimating()
         }
+        
         DispatchQueue.global().async(execute: workItem)
     }
 
@@ -137,35 +161,14 @@ class ViewController: UIViewController {
         var password = ""
         passwordTextField.isSecureTextEntry = true
 
-        for _ in 0..<4 {
+        for _ in 0..<2 {
             password.append(String(String().printable.randomElement() ?? Character("")))
         }
         passwordTextField.text = password
     }
-}
 
-func indexOf(character: Character, _ array: [String]) -> Int {
-    return array.firstIndex(of: String(character))!
-}
-
-func characterAt(index: Int, _ array: [String]) -> Character {
-    return index < array.count ? Character(array[index])
-    : Character("")
-}
-
-func generateBruteForce(_ string: String, fromArray array: [String]) -> String {
-    var str: String = string
-
-    if str.count <= 0 {
-        str.append(characterAt(index: 0, array))
+    @objc
+    private func changeColor() {
+        isBlack.toggle()
     }
-    else {
-        str.replace(at: str.count - 1,
-                    with: characterAt(index: (indexOf(character: str.last!, array) + 1) % array.count, array))
-
-        if indexOf(character: str.last!, array) == 0 {
-            str = String(generateBruteForce(String(str.dropLast()), fromArray: array)) + String(str.last!)
-        }
-    }
-    return str
 }
