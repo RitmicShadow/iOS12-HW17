@@ -5,7 +5,7 @@
 //  Created by Ден Майшев on 01.04.2024.
 //
 
-import Foundation
+import UIKit
 
 extension String {
     var digits:      String { return "0123456789" }
@@ -20,4 +20,12 @@ extension String {
         stringArray[index] = character
         self = String(stringArray)
     }
+}
+
+extension UIViewController {
+    func addTapGestureToHideKeyboard() {
+           let tapGesture = UITapGestureRecognizer(target: view, 
+                                                   action: #selector(view.endEditing))
+           view.addGestureRecognizer(tapGesture)
+       }
 }
