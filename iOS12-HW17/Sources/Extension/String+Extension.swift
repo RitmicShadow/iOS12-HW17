@@ -20,12 +20,11 @@ extension String {
         stringArray[index] = character
         self = String(stringArray)
     }
-}
 
-extension UIViewController {
-    func addTapGestureToHideKeyboard() {
-           let tapGesture = UITapGestureRecognizer(target: view, 
-                                                   action: #selector(view.endEditing))
-           view.addGestureRecognizer(tapGesture)
-       }
+    var containsValidCharacter: Bool {
+        guard self != "" else { return true }
+        let printableSet = CharacterSet(charactersIn: self.printable)
+        let newSet = CharacterSet(charactersIn: self)
+        return printableSet.isSuperset(of: newSet)
+      }
 }

@@ -83,7 +83,14 @@ class ViewController: UIViewController, GeneratedPassword {
         setupHierarchy()
         setupView()
         addTapGestureToHideKeyboard()
+        passwordTextField.delegate = self
     }
+
+    private func addTapGestureToHideKeyboard() {
+           let tapGesture = UITapGestureRecognizer(target: view,
+                                                   action: #selector(view.endEditing))
+           view.addGestureRecognizer(tapGesture)
+       }
 
 //    MARK: - Setups
 
@@ -135,40 +142,52 @@ class ViewController: UIViewController, GeneratedPassword {
 
     @objc
     private func onButt() {
+        button.isEnabled = false
+        buttonGeneretedPassword.isEnabled = false
         let text = passwordTextField.text
         var labelText = ""
         let workItem = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    spinner.startAnimating()
-                }
-                labelText = bruteForce(passwordToUnlock: text ?? "")
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                spinner.startAnimating()
             }
+            labelText = bruteForce(passwordToUnlock: text ?? "")
+        }
 
         workItem.notify(queue: .main) { [weak self] in
             guard let self = self else { return }
             label.text = labelText
             passwordTextField.isSecureTextEntry = false
             spinner.stopAnimating()
+            button.isEnabled = true
+            buttonGeneretedPassword.isEnabled = true
         }
-        
+
         DispatchQueue.global().async(execute: workItem)
     }
 
     @objc
     private func generatedPassword() {
-        var password = ""
-        passwordTextField.isSecureTextEntry = true
+            var password = ""
+            passwordTextField.isSecureTextEntry = true
 
-        for _ in 0..<2 {
-            password.append(String(String().printable.randomElement() ?? Character("")))
-        }
-        passwordTextField.text = password
+            for _ in 0..<2 {
+                password.append(String(String().printable.randomElement() ?? Character("")))
+            }
+            passwordTextField.text = password
     }
 
     @objc
     private func changeColor() {
         isBlack.toggle()
+    }
+}
+
+extension ViewController: UITextFieldDelegate {
+    func textField(_ textField: UITextField,
+                   shouldChangeCharactersIn range: NSRange,
+                   replacementString string: String) -> Bool {
+        return (string.containsValidCharacter)
     }
 }
